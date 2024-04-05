@@ -7,6 +7,7 @@ export interface Message {
   content: string;
   role: "user" | "assistant" | "system";
   loading?: boolean;
+  picture_number?: number;
 }
 
 // Helper function to estimate tokens

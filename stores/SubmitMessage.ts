@@ -124,7 +124,7 @@ export const submitMessage = async (message: Message) => {
         }),
       }));
     },
-    (promptTokensUsed, completionTokensUsed) => {
+    async (promptTokensUsed, completionTokensUsed) => {
       set((state) => ({
         apiState: "idle",
         chats: updateChatMessages(state.chats, chat.id, (messages) => {
@@ -138,6 +138,7 @@ export const submitMessage = async (message: Message) => {
         }),
       }));
       updateTokens(promptTokensUsed, completionTokensUsed);
+      await findPicture().then(() => {console.log("LATEST_MESSAGE: ", get().chats.slice(-1)[0].latestMessage)});
       if (get().settingsForm.auto_title) {
         findChatTitle();
       }
@@ -156,6 +157,72 @@ export const submitMessage = async (message: Message) => {
       abortCurrentRequest();
     }
   );
+
+  const findPicture = async () => {
+    const chat = getChatById(get().chats, get().activeChatId);
+    if (chat === undefined) {
+      console.error("Chat not found");
+      return;
+    }
+
+    const msg = {
+      id: uuidv4(),
+      content: `以下の感情パラメーターの場合、今から提示する説明でどれが最も正しいかを一つのみ選択してください。回答は半角数字で行ってください。
+      形式は以下です。
+      { select: number }
+      
+      選択肢：
+      1.  ​満面の笑み​ - 喜びと楽しさが最高潮に達した状態。
+      2.  ​胸を張って自信気​ - 自信満々でポジティブなオーラを放つ。
+      3.  ​涙を流して泣いている​ - 悲しみや喪失感で涙を流す。
+      4.  ​怒りを露にして​ - 激怒し、怒りが顔に表れる。
+      5.  ​不安げな顔​ - 恐怖や不安で顔が曇り、落ち着かない様子。
+      6.  ​好奇心旺盛​ - 新しいことに対する期待やワクワクを感じる。
+      7.  ​失望感​ - 期待が裏切られた時のガッカリ感。
+      8.  ​ワクワクしている​ - 楽しいことが起こる予想で心が躍る。
+      9.  ​照れ笑い​ - 恥ずかしさや甘酸っぱさからくる笑顔。
+      10. ​静かな自信​ - 落ち着いた態度で内面の自信を見せる。
+      11. ​心が躍っている​ - 興奮や興味が高まる瞬間。
+      12. ​達成感​ - 目標や課題をクリアしたときの満足感。
+      13. ​絶望している​ - 希望が見出せず、心が折れそうな状態。
+      14. ​疑問に思っている​ - 何かが分からず、考え込む様子。
+      15. ​愛情深く見つめる​ - 深い愛情や好意を込めた眼差し。
+      16. ​不信感を抱いている​ - 信用できない、疑念を持っている表情。
+      17. ​恐怖に凍えている​ - 恐怖で身動きがとれず、青ざめる。
+      18. ​挑戦する意欲​ - 新たな目標や困難に立ち向かおうとする決意。
+      19. ​冷静な態度​ - 動じない態度で、落ち着き払っている。`,
+      role: "system",
+    } as Message;
+
+    let isFirstMessage = true;
+    let latestMessage = "";
+
+    await streamCompletion(
+      [msg, ...chat.messages.slice(-1)],
+      settings,
+      apiKey,
+      undefined,
+      (content) => {
+        set((state) => ({
+          chats: state.chats.map((c) => {
+            if (c.id === chat.id) {
+              if (isFirstMessage) {
+                chat.latestMessage = "";
+                latestMessage = "";
+              } else {
+                chat.latestMessage = (chat.latestMessage || "") + content;
+                latestMessage = (chat.latestMessage || "") + content;
+              }
+            }
+            return c;
+          }),
+        }));
+        console.log("latestMessage: ", latestMessage);
+        isFirstMessage = false;
+      },
+      updateTokens
+    );
+  }
 
   const findChatTitle = async () => {
     const chat = getChatById(get().chats, get().activeChatId);

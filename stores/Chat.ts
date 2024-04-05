@@ -9,4 +9,5 @@ export interface Chat {
   promptTokensUsed?: number;
   completionTokensUsed?: number;
   costIncurred?: number;
+  latestMessage: string | undefined;
 }
