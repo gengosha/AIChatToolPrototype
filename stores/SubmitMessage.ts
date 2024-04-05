@@ -124,7 +124,7 @@ export const submitMessage = async (message: Message) => {
         }),
       }));
     },
-    async (promptTokensUsed, completionTokensUsed) => {
+    (promptTokensUsed, completionTokensUsed) => {
       set((state) => ({
         apiState: "idle",
         chats: updateChatMessages(state.chats, chat.id, (messages) => {
@@ -138,7 +138,7 @@ export const submitMessage = async (message: Message) => {
         }),
       }));
       updateTokens(promptTokensUsed, completionTokensUsed);
-      await findPicture().then(() => {console.log("LATEST_MESSAGE: ", get().chats.slice(-1)[0].latestMessage)});
+      findPicture();
       if (get().settingsForm.auto_title) {
         findChatTitle();
       }
@@ -195,7 +195,6 @@ export const submitMessage = async (message: Message) => {
     } as Message;
 
     let isFirstMessage = true;
-    let latestMessage = "";
 
     await streamCompletion(
       [msg, ...chat.messages.slice(-1)],
@@ -206,18 +205,11 @@ export const submitMessage = async (message: Message) => {
         set((state) => ({
           chats: state.chats.map((c) => {
             if (c.id === chat.id) {
-              if (isFirstMessage) {
-                chat.latestMessage = "";
-                latestMessage = "";
-              } else {
-                chat.latestMessage = (chat.latestMessage || "") + content;
-                latestMessage = (chat.latestMessage || "") + content;
-              }
+              c.messages.slice(-1)[0].pictureNumber = (chat.messages.slice(-1)[0].pictureNumber || "") + content;
             }
             return c;
           }),
         }));
-        console.log("latestMessage: ", latestMessage);
         isFirstMessage = false;
       },
       updateTokens

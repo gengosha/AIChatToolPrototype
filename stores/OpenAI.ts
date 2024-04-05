@@ -148,7 +148,12 @@ export async function streamCompletion(
     role: "system",
   } as Message;
 
-  if(!submitMessages[0].content.includes("以下の感情パラメーターの場合、今から提示する説明でどれが最も正しいかを一つのみ選択してください。")) {
+  const sentences = [
+    "以下の感情パラメーターの場合、今から提示する説明でどれが最も正しいかを一つのみ選択してください。",
+    "Describe the following conversation snippet"
+  ]
+  
+  if(!sentences.includes(submitMessages[0].content)) {
     submitMessages = [msg, ...submitMessages];
   }
   console.log(submitMessages);
