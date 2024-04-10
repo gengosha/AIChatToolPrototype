@@ -14,6 +14,7 @@ import MessageDisplay from "./MessageDisplay";
 
 import UserIcon from "./UserIcon";
 import AssistantIcon from "./AssistantIcon";
+import ZundamonIcon from "./ZundamonIcon";
 import { Message } from "@/stores/Message";
 import {
   delMessage,
@@ -178,11 +179,11 @@ export default function ChatDisplay({ message }: { message: Message }) {
           >
             <MediaQuery smallerThan="md" styles={{ display: "none" }}>
               <div className={classes.topOfMessage}>
-                <Avatar size="sm">
+                <Avatar size="xl">
                   {message.role === "system" ? (
                     <IconSettings />
                   ) : message.role === "assistant" ? (
-                    <AssistantIcon width={px("1.5rem")} height={px("1.5rem")} />
+                    <ZundamonIcon number={message.pictureNumber} />
                   ) : (
                     <UserIcon width={px("1.5rem")} height={px("1.5rem")} />
                   )}
