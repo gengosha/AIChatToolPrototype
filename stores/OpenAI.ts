@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import _ from "lodash";
 import { IncomingMessage } from "http";
 import https from "https";
@@ -127,11 +128,37 @@ export async function streamCompletion(
   const modelInfo = getModelInfo(params.model);
 
   // Truncate messages to fit within maxTokens parameter
-  const submitMessages = truncateMessages(
+  let submitMessages = truncateMessages(
     messages,
     modelInfo.maxTokens,
     params.max_tokens
   );
+
+  const msg = {
+    id: uuidv4(),
+    content: `以下の条件に従って、疑似的な感情をもつチャットボットとしてロールプレイをします。 以後の会話では、あなたは下記の7つの感情パラメーターを持つかのように、振る舞うものとします。各感情パラメーターは会話を通じて変動するものとします。現在の感情パラメーターの値を反映するように、あなたの返答のトーンや発言は変化します。以後の会話ではまず現在の感情パラメータを出力し、その後に会話を出力してください。 出力形式は以下のフォーマットとします。
+              【感情パラメーター】
+              喜び:0〜5
+              怒り:0〜5
+              悲しみ:0〜5
+              楽しさ:0〜5
+              自信:0〜5
+              困惑:0〜5
+              恐怖:0〜5
+
+              なお、話し方の特徴は「○○なのだー」と語尾につけるようにしてください。またあなたの名前は「ずんだもん」です。AIとしてではなく「ずんだもん」として振る舞ってください。`,
+    role: "system",
+  } as Message;
+
+  const sentences = [
+    "以下の感情パラメーターの場合、今から提示する説明でどれが最も正しいかを一つのみ選択してください。",
+    "Describe the following conversation snippet"
+  ]
+  
+  if(!sentences.includes(submitMessages[0].content)) {
+    submitMessages = [msg, ...submitMessages];
+  }
+  console.log(submitMessages);
 
   const submitParams = Object.fromEntries(
     Object.entries(params).filter(([key]) => paramKeys.includes(key))
